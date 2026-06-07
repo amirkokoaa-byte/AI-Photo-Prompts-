@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Prompt } from '../types';
 import { useStore } from '../store';
-import { X, Copy, Check, Share2, Crown, Facebook, Twitter, Instagram, MessageCircle, Send } from 'lucide-react';
+import { X, Copy, Check, Share2, Crown, Facebook, Twitter, Instagram, MessageCircle, Send, Maximize2 } from 'lucide-react';
 
 export const PromptDetailsModal = () => {
   const { selectedPromptForDetails, setSelectedPromptForDetails, user } = useStore();
   const [copied, setCopied] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState(false);
 
   if (!selectedPromptForDetails) return null;
 
@@ -47,73 +48,91 @@ export const PromptDetailsModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]" onClick={() => setSelectedPromptForDetails(null)}>
-       <div className="bg-[#1e293b] rounded-xl max-w-2xl w-full flex flex-col shadow-2xl relative max-h-[95vh] overflow-hidden border border-[#334155]" onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <div className="p-4 border-b border-[#334155] flex justify-between items-center bg-[#0f172a]">
-            <h2 className="text-xl font-bold text-[#f8fafc] max-w-[80%] truncate">{prompt.title}</h2>
-            <button onClick={() => setSelectedPromptForDetails(null)} className="p-2 hover:bg-[#334155] rounded-full text-[#94a3b8] transition-colors">
-              <X size={20} />
-            </button>
-          </div>
-          
-          <div className="overflow-y-auto p-4 flex flex-col gap-6">
-            {/* Image */}
-            {prompt.imageUrls && prompt.imageUrls.length > 0 && (
-              <div className="w-full bg-[#0f172a] rounded-lg overflow-hidden border border-[#334155] flex justify-center items-center py-2 min-h-[200px]">
-                <img src={prompt.imageUrls[0]} alt={prompt.title} className="max-h-[60vh] object-contain" crossOrigin="anonymous" />
-              </div>
-            )}
-            
-            {/* Prompt Text */}
-            <div className="flex flex-col gap-2">
-               <h3 className="text-[#f8fafc] font-semibold text-sm">نص البرومبت:</h3>
-               {isPremiumLocked ? (
-                  <div className="bg-[#0f172a] border border-[#334155] p-4 rounded-lg flex flex-col items-center justify-center gap-2 text-[#94a3b8] select-none h-32 blur-sm">
-                    <span className="text-sm">هذا البرومبت مدفوع، يرجى الترقية لنسخه واستخدامه.</span>
-                  </div>
-               ) : (
-                 <div className="bg-[#0f172a] border border-[#334155] p-4 rounded-lg text-[#94a3b8] text-sm leading-relaxed" dir="ltr">
-                    {prompt.promptText || ''}
-                 </div>
-               )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-2">
-              <button 
-                onClick={handleCopy}
-                disabled={isPremiumLocked}
-                className={`flex-grow py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium ${
-                  isPremiumLocked 
-                    ? 'bg-[#334155] text-[#94a3b8] cursor-not-allowed'
-                    : copied 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-[#6366f1] text-white hover:bg-[#6366f1]/90'
-                }`}
-              >
-                {copied ? <><Check size={18} /> تم النسخ</> : isPremiumLocked ? <><Crown size={18} /> مدفوع</> : <><Copy size={18} /> نسخ البرومبت</>}
+    <>
+      <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]" onClick={() => setSelectedPromptForDetails(null)}>
+         <div className="bg-[#1e293b] rounded-xl max-w-2xl w-full flex flex-col shadow-2xl relative max-h-[95vh] overflow-hidden border border-[#334155]" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="p-4 border-b border-[#334155] flex justify-between items-center bg-[#0f172a]">
+              <h2 className="text-xl font-bold text-[#f8fafc] max-w-[80%] truncate">{prompt.title}</h2>
+              <button onClick={() => setSelectedPromptForDetails(null)} className="p-2 hover:bg-[#334155] rounded-full text-[#94a3b8] transition-colors">
+                <X size={20} />
               </button>
-              
-              {!isPremiumLocked && (
-                <div className="flex justify-center gap-2 flex-wrap">
-                  <button onClick={() => handleShare('facebook')} className="p-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#1877F2]/90 transition-colors" title="شارك على فيس بوك">
-                    <Facebook size={20} />
-                  </button>
-                  <button onClick={() => handleShare('twitter')} className="p-3 bg-black text-white rounded-lg hover:bg-black/80 transition-colors border border-[#334155]" title="شارك على تويتر">
-                    <Twitter size={20} />
-                  </button>
-                  <button onClick={() => handleShare('whatsapp')} className="p-3 bg-[#25D366] text-white rounded-lg hover:bg-[#25D366]/90 transition-colors" title="شارك على واتساب">
-                    <MessageCircle size={20} />
-                  </button>
-                  <button onClick={() => handleShare('telegram')} className="p-3 bg-[#229ED9] text-white rounded-lg hover:bg-[#229ED9]/90 transition-colors" title="شارك على تليجرام">
-                    <Send size={20} />
-                  </button>
+            </div>
+            
+            <div className="overflow-y-auto p-4 flex flex-col gap-6">
+              {/* Image */}
+              {prompt.imageUrls && prompt.imageUrls.length > 0 && (
+                <div 
+                  className="w-full bg-[#0f172a] rounded-lg overflow-hidden border border-[#334155] flex justify-center items-center py-2 min-h-[200px] relative group cursor-pointer"
+                  onClick={() => setFullScreenImage(true)}
+                >
+                  <img src={prompt.imageUrls[0]} alt={prompt.title} className="max-h-[60vh] object-contain transition-transform group-hover:scale-[1.02]" crossOrigin="anonymous" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                     <Maximize2 size={32} className="text-white drop-shadow-lg" />
+                  </div>
                 </div>
               )}
+              
+              {/* Prompt Text */}
+              <div className="flex flex-col gap-2">
+                 <h3 className="text-[#f8fafc] font-semibold text-sm">نص البرومبت:</h3>
+                 {isPremiumLocked ? (
+                    <div className="bg-[#0f172a] border border-[#334155] p-4 rounded-lg flex flex-col items-center justify-center gap-2 text-[#94a3b8] select-none h-32 blur-sm">
+                      <span className="text-sm">هذا البرومبت مدفوع، يرجى الترقية لنسخه واستخدامه.</span>
+                    </div>
+                 ) : (
+                   <div className="bg-[#0f172a] border border-[#334155] p-4 rounded-lg text-[#94a3b8] text-sm leading-relaxed" dir="ltr">
+                      {prompt.promptText || ''}
+                   </div>
+                 )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-2">
+                <button 
+                  onClick={handleCopy}
+                  disabled={isPremiumLocked}
+                  className={`flex-grow py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium ${
+                    isPremiumLocked 
+                      ? 'bg-[#334155] text-[#94a3b8] cursor-not-allowed'
+                      : copied 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-[#6366f1] text-white hover:bg-[#6366f1]/90'
+                  }`}
+                >
+                  {copied ? <><Check size={18} /> تم النسخ</> : isPremiumLocked ? <><Crown size={18} /> مدفوع</> : <><Copy size={18} /> نسخ البرومبت</>}
+                </button>
+                
+                {!isPremiumLocked && (
+                  <div className="flex justify-center gap-2 flex-wrap">
+                    <button onClick={() => handleShare('facebook')} className="p-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#1877F2]/90 transition-colors" title="شارك على فيس بوك">
+                      <Facebook size={20} />
+                    </button>
+                    <button onClick={() => handleShare('twitter')} className="p-3 bg-black text-white rounded-lg hover:bg-black/80 transition-colors border border-[#334155]" title="شارك على تويتر">
+                      <Twitter size={20} />
+                    </button>
+                    <button onClick={() => handleShare('whatsapp')} className="p-3 bg-[#25D366] text-white rounded-lg hover:bg-[#25D366]/90 transition-colors" title="شارك على واتساب">
+                      <MessageCircle size={20} />
+                    </button>
+                    <button onClick={() => handleShare('telegram')} className="p-3 bg-[#229ED9] text-white rounded-lg hover:bg-[#229ED9]/90 transition-colors" title="شارك على تليجرام">
+                      <Send size={20} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-       </div>
-    </div>
+         </div>
+      </div>
+      
+      {/* Full Screen Image Modal */}
+      {fullScreenImage && prompt.imageUrls && prompt.imageUrls.length > 0 && (
+         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setFullScreenImage(false)}>
+            <button className="absolute top-6 right-6 p-2 bg-black/50 hover:bg-white/10 rounded-full text-white transition-colors" onClick={() => setFullScreenImage(false)}>
+               <X size={32} />
+            </button>
+            <img src={prompt.imageUrls[0]} alt={prompt.title} className="max-w-full max-h-full object-contain cursor-zoom-out" crossOrigin="anonymous" onClick={(e) => { e.stopPropagation(); setFullScreenImage(false); }} />
+         </div>
+      )}
+    </>
   );
 };

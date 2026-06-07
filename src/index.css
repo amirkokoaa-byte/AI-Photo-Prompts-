@@ -23,10 +23,12 @@
 .scrolling-wrapper {
   overflow: hidden;
   white-space: nowrap;
+  display: flex;
 }
 .scrolling-content {
-  display: inline-block;
-  animation: scroll-left 20s linear infinite;
+  display: inline-flex;
+  min-width: max-content;
+  animation: scroll-left 40s linear infinite;
 }
 .scrolling-content:hover {
   animation-play-state: paused;

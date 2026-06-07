@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { db } from '../firebase';
-import { doc, updateDoc, collection, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, collection, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { CustomUser, Prompt, AppSettings } from '../types';
 import { Plus, Trash, Crown, Play, Edit, UploadCloud } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -29,26 +29,44 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
   }, [user, navigate]);
 
   useEffect(() => {
+    let unsub: (() => void) | undefined;
     if (activeTab === 'users' && user?.isAdmin) {
-      loadUsers();
+      const q = collection(db, 'custom_users');
+      unsub = onSnapshot(q, (snaps) => {
+        setUsers(snaps.docs.map(d => ({id: d.id, ...d.data()} as CustomUser)));
+      });
     }
+    return () => {
+      if (unsub) unsub();
+    };
   }, [activeTab, user]);
 
-  const loadUsers = async () => {
-    const snaps = await getDocs(collection(db, 'custom_users'));
-    setUsers(snaps.docs.map(d => ({id: d.id, ...d.data()} as CustomUser)));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        callback(reader.result as string);
+      // Create FormData to send the file
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+         // Upload directly to user's imgbb API
+         const res = await fetch(`https://api.imgbb.com/1/upload?key=2a036fa2979a757bed58d7d0d4643947`, {
+           method: 'POST',
+           body: formData
+         });
+         const data = await res.json();
+         if (data.data?.url) {
+           // We just keep the direct URL provided by imgbb
+           callback(data.data.url);
+         } else {
+           alert('فشل رفع الصورة');
+         }
+      } catch (err: any) {
+         alert('حدث خطأ أثناء رفع الصورة');
+      } finally {
          // Clear input
          e.target.value = '';
-      };
-      reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -56,7 +74,7 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
     e.preventDefault();
     if (!user?.isAdmin) return;
     try {
-      await updateDoc(doc(db, 'app_settings', 'global'), { ...appForm });
+      await setDoc(doc(db, 'app_settings', 'global'), { ...appForm }, { merge: true });
       alert('تم حفظ الإعدادات');
     } catch (err: any) {
       alert(err.message);
@@ -139,7 +157,7 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
                  <span>صورة البانر بالأعلى (رابط)</span>
                  <label className="cursor-pointer flex items-center gap-1 text-xs text-[#6366f1] hover:text-[#818cf8] transition-colors">
                    <UploadCloud size={14} /> رفع من الجهاز
-                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (b64) => setAppForm({...appForm, bannerImageUrl: b64}))} />
+                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (url) => setAppForm({...appForm, bannerImageUrl: url}))} />
                  </label>
                </label>
                <input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.bannerImageUrl} onChange={e=>setAppForm({...appForm, bannerImageUrl: e.target.value})} />
@@ -247,9 +265,9 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
                     <span>روابط الصور (رابط واحد في كل سطر)</span>
                     <label className="cursor-pointer flex items-center gap-1 text-xs text-[#6366f1] hover:text-[#818cf8] transition-colors">
                        <UploadCloud size={14} /> إضافة صورة من الجهاز
-                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (b64) => {
+                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (url) => {
                            const currentUrls = editPromptData.imageUrls || [];
-                           setEditPromptData({...editPromptData, imageUrls: [...currentUrls, b64]});
+                           setEditPromptData({...editPromptData, imageUrls: [...currentUrls, url]});
                        })} />
                     </label>
                   </label>
