@@ -6,6 +6,7 @@ import { CategoryView } from './components/CategoryView';
 import { Settings } from './components/Settings';
 import { Marquee } from './components/Marquee';
 import { PromptDetailsModal } from './components/PromptDetailsModal';
+import { PaymentModal } from './components/PaymentModal';
 import { useStore } from './store';
 import { db } from './firebase';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
@@ -14,7 +15,7 @@ import { Prompt, AppSettings } from './types';
 import { Notifications } from './components/Notifications';
 
 export default function App() {
-  const { setSettings, settings, setSelectedPromptForDetails } = useStore();
+  const { setSettings, settings, setSelectedPromptForDetails, showPremiumModal, setShowPremiumModal } = useStore();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
 
   // Load Settings Realtime
@@ -48,9 +49,10 @@ export default function App() {
     <BrowserRouter>
       <Layout>
         <PromptDetailsModal />
+        {showPremiumModal && <PaymentModal onClose={() => setShowPremiumModal(false)} />}
         <Marquee prompts={marqueePrompts} onPromptClick={(p) => setSelectedPromptForDetails(p)} />
         <Routes>
-          <Route path="/" element={<Navigate to="/category/1" replace />} />
+          <Route path="/" element={<CategoryView prompts={prompts} />} />
           <Route path="/category/:categoryId" element={<CategoryView prompts={prompts} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/settings" element={<Settings prompts={prompts} />} />

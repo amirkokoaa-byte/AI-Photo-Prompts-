@@ -1,9 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
-import { Menu, X, Sun, Moon, Settings as SettingsIcon, LogOut, DollarSign, Phone, Bell } from 'lucide-react';
-import { Link, useLocation } from 'react-router';
+import { Menu, X, Sun, Moon, Settings as SettingsIcon, LogOut, DollarSign, Phone, Bell, Home, ArrowRight } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Notification } from '../types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,9 +21,33 @@ const getAbsoluteUrl = (url: string) => {
 };
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
-  const { user, settings, darkMode, toggleDarkMode, sidebarOpen, setSidebarOpen, setUser } = useStore();
+  const { user, settings, darkMode, toggleDarkMode, sidebarOpen, setSidebarOpen, setUser, setSelectedPromptForDetails, setShowPremiumModal } = useStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  useEffect(() => {
+    if (user?.isAdmin) {
+      const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
+      const unsub = onSnapshot(q, (snap) => {
+        setNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
+      });
+      return () => unsub();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleClickOutsideNotif = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node) && showNotifs) {
+        setShowNotifs(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideNotif);
+    return () => document.removeEventListener('mousedown', handleClickOutsideNotif);
+  }, [showNotifs]);
 
   useEffect(() => {
     if (darkMode) {
@@ -46,6 +73,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   }, [location.pathname, setSidebarOpen]);
 
   const menuItems = [
+    { path: '/', label: 'الصفحة الرئيسية' },
     { path: '/category/1', label: settings.menuTitle1 },
     { path: '/category/2', label: settings.menuTitle2 },
     { path: '/category/3', label: settings.menuTitle3 },
@@ -86,7 +114,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       </div>
 
       {/* Main Header */}
-      <header className="bg-[#0f172a] shadow-sm sticky top-0 z-40">
+      <header className="bg-[#0f172a] shadow-sm relative z-40 flex flex-col">
         {settings.bannerImageUrl && (
           <div className="w-full h-32 md:h-48 overflow-hidden object-cover relative">
             <img src={settings.bannerImageUrl} alt="Banner" className="w-full h-full object-cover" crossOrigin="anonymous" />
@@ -96,22 +124,47 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="p-4 flex flex-col gap-4">
           <div className="flex items-center justify-between bg-[#1e293b] p-3 rounded-xl border border-[#334155]">
             <div className="flex items-center gap-3">
-              <button onClick={(e) => { e.stopPropagation(); setSidebarOpen(!sidebarOpen); }} className="p-2 hover:bg-[#334155] rounded-lg text-[#94a3b8]">
+              <button title="القائمة" onClick={(e) => { e.stopPropagation(); setSidebarOpen(!sidebarOpen); }} className="p-2 hover:bg-[#334155] rounded-lg text-[#94a3b8]">
                 <Menu size={24} />
               </button>
-              <Link to="/" className="text-xl font-bold text-[#f8fafc] ml-2">
+              <button title="إغلاق" onClick={() => { setSelectedPromptForDetails(null); navigate('/'); }} className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors">
+                <X size={24} />
+              </button>
+              <button title="رجوع" onClick={() => { setSelectedPromptForDetails(null); navigate(-1); }} className="p-2 hover:bg-[#334155] rounded-lg text-[#94a3b8] transition-colors">
+                <ArrowRight size={24} />
+              </button>
+              <button title="تحديث / الرئيسية" onClick={() => { setSelectedPromptForDetails(null); navigate('/'); }} className="p-2 hover:bg-[#334155] rounded-lg text-[#94a3b8] transition-colors">
+                <Home size={24} />
+              </button>
+              <Link to="/" onClick={() => setSelectedPromptForDetails(null)} className="text-xl font-bold text-[#f8fafc] ml-2 hidden sm:block">
                 {settings.appName}
               </Link>
             </div>
             <div className="flex items-center gap-2">
               {(user?.isAdmin) && (
-                <Link to="/notifications" className="p-2 relative hover:bg-[#334155] rounded-lg text-[#94a3b8] transition-colors">
-                  <Bell size={24} />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </Link>
+                <div className="relative" ref={notifRef}>
+                  <button onClick={() => setShowNotifs(!showNotifs)} className="p-2 relative hover:bg-[#334155] rounded-lg text-[#94a3b8] transition-colors">
+                    <Bell size={24} />
+                    {notifs.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>}
+                  </button>
+                  {showNotifs && (
+                    <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 bg-[#1e293b] border border-[#334155] rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto p-4 transition-all">
+                       <h3 className="font-bold text-[#f8fafc] mb-3 border-b border-[#334155] pb-2">الاشعارات</h3>
+                       <div className="flex flex-col gap-2">
+                         {notifs.length === 0 ? <p className="text-[#94a3b8] text-xs text-center py-4">لا توجد إشعارات</p> : notifs.map(n => (
+                           <div key={n.id} className="bg-[#0f172a] p-3 rounded-lg border border-[#334155] text-xs flex flex-col gap-1">
+                              <div className="font-semibold text-[#f8fafc]">المستخدم: <span className="text-[#6366f1]">{n.username}</span></div>
+                              <div className="text-[#94a3b8] leading-relaxed">{n.action}</div>
+                              <div className="text-[#475569] text-[10px]" dir="ltr">{new Date(n.createdAt).toLocaleString('ar-EG')}</div>
+                           </div>
+                         ))}
+                       </div>
+                    </div>
+                  )}
+                </div>
               )}
               {(user?.isAdmin || user?.isPremium) && (
-                <Link to="/settings" className="p-2 hover:bg-[#334155] rounded-lg text-[#94a3b8] transition-colors">
+                <Link to="/settings" onClick={() => setSelectedPromptForDetails(null)} className="p-2 hover:bg-[#334155] rounded-lg text-[#94a3b8] transition-colors">
                   <SettingsIcon size={24} />
                 </Link>
               )}
@@ -154,11 +207,17 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               {item.label}
             </Link>
           ))}
+          <button
+            onClick={() => setShowPremiumModal(true)}
+            className="px-6 py-3 transition-colors font-medium flex items-center justify-between border-r-4 hover:bg-[#fbbf24]/10 text-[#fbbf24] border-r-transparent hover:border-r-[#fbbf24]"
+          >
+            Premium 👑
+          </button>
           {user?.isAdmin && (
              <Link
              to="/settings"
              className={cn(
-               "px-6 py-3 transition-colors font-medium flex items-center justify-between mt-auto border-r-4",
+               "px-6 py-3 transition-colors font-medium flex items-center justify-between border-r-4",
                location.pathname === '/settings'
                  ? "bg-[#6366f1]/10 text-[#f8fafc] border-r-[#6366f1]"
                  : "hover:bg-[#6366f1]/5 text-[#94a3b8] border-r-transparent hover:text-[#f8fafc]"
@@ -169,6 +228,13 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                إعدادات النظام
              </div>
            </Link>
+          )}
+          {user && (
+            <div className="mt-auto pt-4 border-t border-[#334155] p-3 mx-4 mb-4 rounded-xl bg-[#6366f1]/10 flex flex-col gap-1 items-center justify-center text-center">
+              <div className="font-bold text-[#f8fafc] flex items-center gap-1 text-sm">
+                مرحباً {user.username} {user.isPremium && <span title="حساب مدفوع" className="text-[#fbbf24]">👑</span>}
+              </div>
+            </div>
           )}
         </div>
       </div>

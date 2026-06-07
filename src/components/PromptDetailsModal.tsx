@@ -47,8 +47,8 @@ export const PromptDetailsModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]">
-       <div className="bg-[#1e293b] rounded-xl max-w-2xl w-full flex flex-col shadow-2xl relative max-h-[95vh] overflow-hidden border border-[#334155]">
+    <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]" onClick={() => setSelectedPromptForDetails(null)}>
+       <div className="bg-[#1e293b] rounded-xl max-w-2xl w-full flex flex-col shadow-2xl relative max-h-[95vh] overflow-hidden border border-[#334155]" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="p-4 border-b border-[#334155] flex justify-between items-center bg-[#0f172a]">
             <h2 className="text-xl font-bold text-[#f8fafc] max-w-[80%] truncate">{prompt.title}</h2>
@@ -74,7 +74,7 @@ export const PromptDetailsModal = () => {
                   </div>
                ) : (
                  <div className="bg-[#0f172a] border border-[#334155] p-4 rounded-lg text-[#94a3b8] text-sm leading-relaxed" dir="ltr">
-                    {prompt.promptText}
+                    {prompt.promptText || ''}
                  </div>
                )}
             </div>

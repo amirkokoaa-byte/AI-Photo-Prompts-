@@ -7,26 +7,25 @@ import { PaymentModal } from './PaymentModal';
 
 export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
   const { categoryId } = useParams();
-  const { user, setSelectedPromptForDetails } = useStore();
+  const { user, setSelectedPromptForDetails, setShowPremiumModal } = useStore();
   const [viewMode, setViewMode] = useState<'list' | 'grid1' | 'grid2'>('grid2');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [paymentPromptSelected, setPaymentPromptSelected] = useState<Prompt | null>(null);
 
-  const categoryPrompts = prompts.filter(p => p.categoryId === categoryId);
+  const categoryPrompts = categoryId ? prompts.filter(p => p.categoryId === categoryId) : prompts;
 
   const handleCopy = (prompt: Prompt) => {
     if (prompt.isPremium && !user?.isPremium && !user?.isAdmin) {
-      setPaymentPromptSelected(prompt);
+      setShowPremiumModal(true);
       return;
     }
-    navigator.clipboard.writeText(prompt.promptText);
+    navigator.clipboard.writeText(prompt.promptText || '');
     setCopiedId(prompt.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handlePromptClick = (prompt: Prompt) => {
     if (prompt.isPremium && !user?.isPremium && !user?.isAdmin) {
-      setPaymentPromptSelected(prompt);
+      setShowPremiumModal(true);
     } else {
       setSelectedPromptForDetails(prompt);
     }
@@ -75,7 +74,7 @@ export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
                 {/* Obfuscate prompt text if premium and user not allowed */}
                 {prompt.isPremium && !user?.isPremium && !user?.isAdmin ? (
                    <div className="text-[11px] text-[#94a3b8] mb-2 blur-sm select-none leading-relaxed h-[45px] overflow-hidden">
-                     {prompt.promptText.substring(0, 50)}...
+                     {(prompt.promptText || '').substring(0, 50)}...
                    </div>
                 ) : (
                   <div className="text-[11px] text-[#94a3b8] mb-2 leading-relaxed h-[45px] overflow-hidden break-words" dir="ltr">
@@ -108,11 +107,6 @@ export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
         </div>
       )}
 
-      {paymentPromptSelected && (
-        <PaymentModal 
-          onClose={() => setPaymentPromptSelected(null)} 
-        />
-      )}
     </div>
   );
 };

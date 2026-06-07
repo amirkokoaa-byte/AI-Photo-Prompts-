@@ -6,7 +6,9 @@ interface AppState {
   settings: AppSettings;
   darkMode: boolean;
   selectedPromptForDetails: Prompt | null;
+  showPremiumModal: boolean;
   setSelectedPromptForDetails: (prompt: Prompt | null) => void;
+  setShowPremiumModal: (show: boolean) => void;
   setUser: (user: CustomUser | null) => void;
   setSettings: (settings: AppSettings) => void;
   toggleDarkMode: () => void;
@@ -31,8 +33,10 @@ export const useStore = create<AppState>((set) => ({
   settings: defaultSettings,
   darkMode: false,
   selectedPromptForDetails: null,
+  showPremiumModal: false,
   sidebarOpen: false,
   setSelectedPromptForDetails: (prompt) => set({ selectedPromptForDetails: prompt }),
+  setShowPremiumModal: (show) => set({ showPremiumModal: show }),
   setUser: (user) => set({ user }),
   setSettings: (settings) => set({ settings }),
   toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
