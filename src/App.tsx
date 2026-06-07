@@ -9,14 +9,55 @@ import { PromptDetailsModal } from './components/PromptDetailsModal';
 import { PaymentModal } from './components/PaymentModal';
 import { useStore } from './store';
 import { db } from './firebase';
-import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
-import { Prompt, AppSettings } from './types';
+import { doc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
+import { Prompt, AppSettings, CustomUser } from './types';
 
 import { Notifications } from './components/Notifications';
 
 export default function App() {
-  const { setSettings, settings, setSelectedPromptForDetails, showPremiumModal, setShowPremiumModal } = useStore();
+  const { setSettings, settings, setSelectedPromptForDetails, showPremiumModal, setShowPremiumModal, setUser } = useStore();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
+
+  // Restore session
+  useEffect(() => {
+    const autoLogin = async () => {
+      const uname = localStorage.getItem('ai_user_uname');
+      const upass = localStorage.getItem('ai_user_pass');
+      
+      if (uname === 'admin' && upass === 'admin') {
+        setUser({ id: 'admin', username: 'admin', password: 'admin', isAdmin: true, isPremium: true, createdAt: Date.now() });
+        return;
+      }
+
+      if (uname && upass) {
+        try {
+          const q = query(collection(db, 'custom_users'), where('username', '==', uname));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const userDoc = snap.docs[0];
+            const data = userDoc.data();
+            if (data.password === upass) {
+              setUser({
+                id: userDoc.id,
+                username: data.username,
+                password: data.password,
+                isPremium: data.isPremium || false,
+                isAdmin: data.isAdmin || false,
+                createdAt: data.createdAt,
+              });
+            } else {
+              // Pass changed
+              localStorage.removeItem('ai_user_uname');
+              localStorage.removeItem('ai_user_pass');
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    autoLogin();
+  }, [setUser]);
 
   // Load Settings Realtime
   useEffect(() => {

@@ -24,11 +24,7 @@ export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
   };
 
   const handlePromptClick = (prompt: Prompt) => {
-    if (prompt.isPremium && !user?.isPremium && !user?.isAdmin) {
-      setShowPremiumModal(true);
-    } else {
-      setSelectedPromptForDetails(prompt);
-    }
+    setSelectedPromptForDetails(prompt);
   };
 
   return (

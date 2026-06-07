@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { db } from '../firebase';
-import { doc, updateDoc, setDoc, collection, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, collection, addDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import { CustomUser, Prompt, AppSettings } from '../types';
 import { Plus, Trash, Crown, Play, Edit, UploadCloud } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -109,30 +109,35 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
   };
 
   const deletePrompt = async (id: string) => {
-    if(confirm('هل تريد حذف هذا البرومبت؟')) {
+    try {
       await deleteDoc(doc(db, 'prompts', id));
+    } catch (e: any) {
+      alert("خطأ في الحذف");
     }
   };
 
   const toggleUserPremium = async (u: CustomUser) => {
-    await updateDoc(doc(db, 'custom_users', u.id), {
-      isPremium: !u.isPremium
-    });
-    loadUsers();
+    try {
+      await updateDoc(doc(db, 'custom_users', u.id), {
+        isPremium: !u.isPremium
+      });
+    } catch (e: any) {}
   };
   
   const changeUserPassword = async (u: CustomUser) => {
     const newPass = prompt(`أدخل كلمة المرور الجديدة للمستخدم ${u.username}`, u.password);
     if(newPass) {
-      await updateDoc(doc(db, 'custom_users', u.id), { password: newPass });
-      loadUsers();
+      try {
+        await updateDoc(doc(db, 'custom_users', u.id), { password: newPass });
+      } catch (e: any) {}
     }
   };
 
   const deleteUser = async (u: CustomUser) => {
-    if(confirm(`هل أنت متأكد من حذف ${u.username}؟`)) {
+    try {
       await deleteDoc(doc(db, 'custom_users', u.id));
-      loadUsers();
+    } catch (e: any) {
+      alert("خطأ في حذف المستخدم");
     }
   };
 

@@ -9,6 +9,7 @@ export const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { setUser } = useStore();
@@ -29,6 +30,13 @@ export const Login = () => {
         createdAt: Date.now()
       };
       setUser(adminUser);
+      if (rememberMe) {
+        localStorage.setItem('ai_user_uname', 'admin');
+        localStorage.setItem('ai_user_pass', 'admin');
+      } else {
+        localStorage.removeItem('ai_user_uname');
+        localStorage.removeItem('ai_user_pass');
+      }
       navigate('/');
       return;
     }
@@ -80,6 +88,13 @@ export const Login = () => {
               createdAt: userData.createdAt,
             };
             setUser(loggedInUser);
+            if (rememberMe) {
+              localStorage.setItem('ai_user_uname', userData.username);
+              localStorage.setItem('ai_user_pass', userData.password);
+            } else {
+              localStorage.removeItem('ai_user_uname');
+              localStorage.removeItem('ai_user_pass');
+            }
             // "يظهر عند تسجيل الدخول شاشه اشعار صغير يختفي بعد 2 ثانيه انتا الان premium"
             if (loggedInUser.isPremium) {
               alert('أنت الآن Premium'); // Simple alert or custom toast
@@ -115,12 +130,24 @@ export const Login = () => {
           <div>
             <label className="block text-sm font-medium mb-1 text-[#94a3b8]">كلمة المرور</label>
             <input 
-              type="text" 
+              type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full px-4 py-2 border border-[#334155] rounded-lg focus:ring-2 focus:ring-[#6366f1] bg-[#0f172a] text-[#f8fafc] outline-none transition-shadow"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="remember"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-[#334155] bg-[#0f172a] text-[#6366f1] accent-[#6366f1]"
+            />
+            <label htmlFor="remember" className="text-sm text-[#94a3b8] cursor-pointer">
+              حفظ بيانات الدخول
+            </label>
           </div>
           <button 
             type="submit" 
