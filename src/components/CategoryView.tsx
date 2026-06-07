@@ -7,7 +7,7 @@ import { PaymentModal } from './PaymentModal';
 
 export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
   const { categoryId } = useParams();
-  const { user } = useStore();
+  const { user, setSelectedPromptForDetails } = useStore();
   const [viewMode, setViewMode] = useState<'list' | 'grid1' | 'grid2'>('grid2');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [paymentPromptSelected, setPaymentPromptSelected] = useState<Prompt | null>(null);
@@ -27,6 +27,8 @@ export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
   const handlePromptClick = (prompt: Prompt) => {
     if (prompt.isPremium && !user?.isPremium && !user?.isAdmin) {
       setPaymentPromptSelected(prompt);
+    } else {
+      setSelectedPromptForDetails(prompt);
     }
   };
 
@@ -54,7 +56,7 @@ export const CategoryView = ({ prompts }: { prompts: Prompt[] }) => {
                 onClick={() => handlePromptClick(prompt)}
               >
                 {prompt.imageUrls && prompt.imageUrls.length > 0 ? (
-                  <img src={prompt.imageUrls[0]} alt={prompt.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" crossOrigin="anonymous" />
+                  <img src={prompt.imageUrls[0]} alt={prompt.title} className="w-full h-full object-contain transition-transform group-hover:scale-105" crossOrigin="anonymous" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#94a3b8] text-xs">لا توجد صورة</div>
                 )}

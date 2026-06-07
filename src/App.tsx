@@ -5,6 +5,7 @@ import { Login } from './components/Login';
 import { CategoryView } from './components/CategoryView';
 import { Settings } from './components/Settings';
 import { Marquee } from './components/Marquee';
+import { PromptDetailsModal } from './components/PromptDetailsModal';
 import { useStore } from './store';
 import { db } from './firebase';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
@@ -13,7 +14,7 @@ import { Prompt, AppSettings } from './types';
 import { Notifications } from './components/Notifications';
 
 export default function App() {
-  const { setSettings, settings } = useStore();
+  const { setSettings, settings, setSelectedPromptForDetails } = useStore();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
 
   // Load Settings Realtime
@@ -46,7 +47,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Layout>
-        <Marquee prompts={marqueePrompts} />
+        <PromptDetailsModal />
+        <Marquee prompts={marqueePrompts} onPromptClick={(p) => setSelectedPromptForDetails(p)} />
         <Routes>
           <Route path="/" element={<Navigate to="/category/1" replace />} />
           <Route path="/category/:categoryId" element={<CategoryView prompts={prompts} />} />

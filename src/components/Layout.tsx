@@ -9,6 +9,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const getAbsoluteUrl = (url: string) => {
+  if (!url) return '#';
+  if (!/^https?:\/\//i.test(url)) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, settings, darkMode, toggleDarkMode, sidebarOpen, setSidebarOpen, setUser } = useStore();
   const location = useLocation();
@@ -50,7 +58,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       <div className="bg-[#1e293b] text-[#94a3b8] text-xs py-2 px-4 flex justify-between items-center z-50 border-b border-[#334155]">
         <div className="flex items-center gap-4">
           {settings.instapayLink && (
-            <a href={settings.instapayLink} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-[#f8fafc] focus:outline-none transition-colors">
+            <a href={getAbsoluteUrl(settings.instapayLink)} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-[#f8fafc] focus:outline-none transition-colors">
               <DollarSign size={14} className="bg-[#334155] text-white rounded-full p-0.5" />
               <span>InstaPay</span>
             </a>

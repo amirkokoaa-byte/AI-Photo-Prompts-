@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { db } from '../firebase';
 import { doc, updateDoc, collection, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { CustomUser, Prompt, AppSettings } from '../types';
-import { Plus, Trash, Crown, Play, Edit } from 'lucide-react';
+import { Plus, Trash, Crown, Play, Edit, UploadCloud } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
@@ -37,6 +37,19 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
   const loadUsers = async () => {
     const snaps = await getDocs(collection(db, 'custom_users'));
     setUsers(snaps.docs.map(d => ({id: d.id, ...d.data()} as CustomUser)));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        callback(reader.result as string);
+         // Clear input
+         e.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAppSubmit = async (e: React.FormEvent) => {
@@ -121,7 +134,16 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
         <form onSubmit={handleAppSubmit} className="flex flex-col gap-4 bg-[#1e293b] p-6 rounded-xl shadow-sm border border-[#334155]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div><label className="text-sm font-medium text-[#94a3b8]">اسم البرنامج</label><input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.appName} onChange={e=>setAppForm({...appForm, appName: e.target.value})} /></div>
-             <div><label className="text-sm font-medium text-[#94a3b8]">صورة البانر بالأعلى (رابط)</label><input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.bannerImageUrl} onChange={e=>setAppForm({...appForm, bannerImageUrl: e.target.value})} /></div>
+             <div>
+               <label className="text-sm font-medium text-[#94a3b8] flex justify-between items-center mb-1">
+                 <span>صورة البانر بالأعلى (رابط)</span>
+                 <label className="cursor-pointer flex items-center gap-1 text-xs text-[#6366f1] hover:text-[#818cf8] transition-colors">
+                   <UploadCloud size={14} /> رفع من الجهاز
+                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (b64) => setAppForm({...appForm, bannerImageUrl: b64}))} />
+                 </label>
+               </label>
+               <input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.bannerImageUrl} onChange={e=>setAppForm({...appForm, bannerImageUrl: e.target.value})} />
+             </div>
              
              <div><label className="text-sm font-medium text-[#94a3b8]">اسم القسم الأول</label><input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.menuTitle1} onChange={e=>setAppForm({...appForm, menuTitle1: e.target.value})} /></div>
              <div><label className="text-sm font-medium text-[#94a3b8]">اسم القسم الثاني</label><input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.menuTitle2} onChange={e=>setAppForm({...appForm, menuTitle2: e.target.value})} /></div>
@@ -156,7 +178,7 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {prompts.filter(p=>p.categoryId === selCategory).map(p => (
               <div key={p.id} className="bg-[#1e293b] p-4 rounded-xl border border-[#334155] shadow-sm flex items-center gap-4">
-                 {p.imageUrls && p.imageUrls[0] && <img src={p.imageUrls[0]} alt="" className="w-16 h-16 object-cover rounded-lg" crossOrigin="anonymous"/>}
+                 {p.imageUrls && p.imageUrls[0] && <div className="w-16 h-16 bg-[#0f172a] rounded-lg overflow-hidden border border-[#334155] flex-shrink-0"><img src={p.imageUrls[0]} alt="" className="w-full h-full object-contain" crossOrigin="anonymous"/></div>}
                  <div className="flex-grow min-w-0">
                     <h3 className="font-semibold text-[#f8fafc] truncate">{p.title}</h3>
                     <div className="flex gap-2 mt-1">
@@ -208,8 +230,8 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
 
       {/* Prompt Modal */}
       {showPromptModal && (
-        <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
-           <div className="bg-[#1e293b] rounded-xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto border border-[#334155]">
+        <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[70] overflow-y-auto">
+           <div className="bg-[#1e293b] rounded-xl max-w-lg w-full p-6 shadow-2xl relative border border-[#334155] m-auto">
               <h2 className="text-xl font-bold mb-4 text-[#f8fafc]">{editPromptData.id ? 'تعديل البرومبت' : 'إضافة برومبت'}</h2>
               <form onSubmit={handlePromptSubmit} className="flex flex-col gap-4">
                 <div>
@@ -221,7 +243,16 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
                   <textarea required dir="ltr" rows={4} className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] font-mono text-sm text-[#f8fafc]" value={editPromptData.promptText || ''} onChange={e=>setEditPromptData({...editPromptData, promptText: e.target.value})} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block text-[#94a3b8]">روابط الصور (رابط واحد في كل سطر)</label>
+                  <label className="text-sm font-medium mb-1 flex justify-between items-center text-[#94a3b8]">
+                    <span>روابط الصور (رابط واحد في كل سطر)</span>
+                    <label className="cursor-pointer flex items-center gap-1 text-xs text-[#6366f1] hover:text-[#818cf8] transition-colors">
+                       <UploadCloud size={14} /> إضافة صورة من الجهاز
+                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (b64) => {
+                           const currentUrls = editPromptData.imageUrls || [];
+                           setEditPromptData({...editPromptData, imageUrls: [...currentUrls, b64]});
+                       })} />
+                    </label>
+                  </label>
                   <textarea dir="ltr" rows={3} placeholder="https://..." className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] font-mono text-xs text-[#f8fafc]" 
                     value={editPromptData.imageUrls?.join('\n') || ''} 
                     onChange={e=>setEditPromptData({...editPromptData, imageUrls: e.target.value.split('\n').filter(l=>l.trim())})} 

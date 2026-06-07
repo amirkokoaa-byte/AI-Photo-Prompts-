@@ -1,10 +1,12 @@
 import { create } from 'zustand';
-import { AppSettings, CustomUser } from './types';
+import { AppSettings, CustomUser, Prompt } from './types';
 
 interface AppState {
   user: CustomUser | null;
   settings: AppSettings;
   darkMode: boolean;
+  selectedPromptForDetails: Prompt | null;
+  setSelectedPromptForDetails: (prompt: Prompt | null) => void;
   setUser: (user: CustomUser | null) => void;
   setSettings: (settings: AppSettings) => void;
   toggleDarkMode: () => void;
@@ -28,7 +30,9 @@ export const useStore = create<AppState>((set) => ({
   user: null,
   settings: defaultSettings,
   darkMode: false,
+  selectedPromptForDetails: null,
   sidebarOpen: false,
+  setSelectedPromptForDetails: (prompt) => set({ selectedPromptForDetails: prompt }),
   setUser: (user) => set({ user }),
   setSettings: (settings) => set({ settings }),
   toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
