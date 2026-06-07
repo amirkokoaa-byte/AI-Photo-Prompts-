@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Custom auth prototype requires open access since we are not using Firebase Auth tokens.
+    // In a real production app, use Firebase Auth and strictly validate tokens.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

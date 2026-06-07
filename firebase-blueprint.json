@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "appName": { "type": "string" },
+        "menuTitle1": { "type": "string" },
+        "menuTitle2": { "type": "string" },
+        "menuTitle3": { "type": "string" },
+        "menuTitle4": { "type": "string" },
+        "instapayLink": { "type": "string" },
+        "walletNumber": { "type": "string" },
+        "bannerImageUrl": { "type": "string" },
+        "whatsappNumber": { "type": "string" }
+      }
+    },
+    "Prompt": {
+      "title": "Prompt",
+      "description": "A single prompt configuration",
+      "type": "object",
+      "properties": {
+        "categoryId": { "type": "string" },
+        "title": { "type": "string" },
+        "promptText": { "type": "string" },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
+        "isPremium": { "type": "boolean" },
+        "isMarquee": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      }
+    },
+    "CustomUser": {
+      "title": "CustomUser",
+      "description": "Custom authentication user",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "isPremium": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "app_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/AppSettings" },
+      "description": "Settings"
+    },
+    "prompts/{promptId}": {
+      "schema": { "$ref": "#/entities/Prompt" },
+      "description": "Prompts"
+    },
+    "custom_users/{userId}": {
+      "schema": { "$ref": "#/entities/CustomUser" },
+      "description": "Custom Users"
+    }
+  }
+}

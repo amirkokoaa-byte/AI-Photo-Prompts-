@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-[#0f172a] text-[#f8fafc] transition-colors duration-300;
+  }
+  .dark body {
+    @apply bg-[#0f172a] text-[#f8fafc];
+  }
+}
+
+/* Base overrrides for identical styling */
+.main-wrapper { @apply bg-[#0f172a]; }
+.marquee-container { @apply bg-[#6366f1]/10 border-b border-[#334155]; }
+.sidebar-item-active { @apply bg-[#6366f1]/10 text-[#f8fafc] border-r-4 border-r-[#6366f1]; }
+.card-border { @apply border-[#334155]; }
+
+.scrolling-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.scrolling-content {
+  display: inline-block;
+  animation: scroll-left 20s linear infinite;
+}
+.scrolling-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll-left {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
