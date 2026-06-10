@@ -216,6 +216,59 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
              <div className="md:col-span-2"><label className="text-sm font-medium text-[#94a3b8]">رقم الواتساب لاستقبال المدفوعات (بصيغة دولية)</label><input dir="ltr" className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.whatsappNumber} onChange={e=>setAppForm({...appForm, whatsappNumber: e.target.value})} /></div>
           </div>
           <button type="submit" className="bg-[#6366f1] hover:bg-[#6366f1]/90 text-white rounded-lg py-2 mt-4 font-medium transition-colors">حفظ الإعدادات</button>
+          
+          <div className="mt-6 border-t border-[#334155] pt-6">
+            <h3 className="text-lg font-bold text-[#f8fafc] mb-4">النسخ الاحتياطي واسترجاع البيانات</h3>
+            <div className="flex gap-4">
+               <button type="button" onClick={() => {
+                  const data = JSON.stringify({ prompts });
+                  const blob = new Blob([data], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'ai_studio_backup.json';
+                  a.click();
+                  URL.revokeObjectURL(url);
+               }} className="bg-emerald-600 hover:bg-emerald-600/90 text-white rounded-lg py-2 px-4 shadow font-medium transition-colors">
+                  نسخ احتياطي للبيانات
+               </button>
+               
+               <label className="bg-orange-600 hover:bg-orange-600/90 cursor-pointer text-white rounded-lg py-2 px-4 shadow font-medium transition-colors">
+                  استرجاع البيانات التي تم رفعها
+                  <input type="file" accept=".json" className="hidden" onChange={(e) => {
+                     const file = e.target.files?.[0];
+                     if (file) {
+                        const reader = new FileReader();
+                        reader.onload = async (ev) => {
+                           try {
+                              const content = ev.target?.result as string;
+                              const parsed = JSON.parse(content);
+                              if (parsed.prompts && Array.isArray(parsed.prompts)) {
+                                 let count = 0;
+                                 for (let p of parsed.prompts) {
+                                    if (p.id) {
+                                       if (p.imageUrl && (!p.imageUrls || p.imageUrls.length === 0)) {
+                                          p.imageUrls = [p.imageUrl];
+                                       }
+                                       await setDoc(doc(db, 'prompts', p.id), p);
+                                       count++;
+                                    }
+                                 }
+                                 alert(`تم استرجاع ${count} سجل بنجاح`);
+                              } else {
+                                 alert('ملف غير صالح');
+                              }
+                           } catch (err) {
+                              alert('خطأ في استرجاع البيانات');
+                           }
+                        };
+                        reader.readAsText(file);
+                     }
+                  }} />
+               </label>
+            </div>
+            <p className="text-[#94a3b8] text-xs mt-2">يمكنك من هنا تحميل نسخة من بياناتك واسترجاعها في أي وقت، وسيتم إضافة البيانات المسترجعة إلى البيانات الحالية.</p>
+          </div>
         </form>
       )}
 

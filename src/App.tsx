@@ -75,7 +75,12 @@ export default function App() {
     const unsub = onSnapshot(q, (snapshot) => {
       const loaded: Prompt[] = [];
       snapshot.forEach((doc) => {
-        loaded.push({ id: doc.id, ...doc.data() } as Prompt);
+        const data = doc.data();
+        let imageUrls = data.imageUrls || [];
+        if (data.imageUrl && imageUrls.length === 0) {
+          imageUrls = [data.imageUrl];
+        }
+        loaded.push({ id: doc.id, ...data, imageUrls } as Prompt);
       });
       // Sort by createdAt descending
       loaded.sort((a, b) => b.createdAt - a.createdAt);

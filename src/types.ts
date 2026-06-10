@@ -16,6 +16,7 @@ export interface Prompt {
   title: string;
   promptText: string;
   imageUrls: string[];
+  imageUrl?: string;
   isPremium: boolean;
   isMarquee: boolean;
   createdAt: number;
