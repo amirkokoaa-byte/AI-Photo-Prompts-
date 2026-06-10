@@ -24,6 +24,11 @@ export const PromptDetailsModal = () => {
   } = useStore();
   const [copied, setCopied] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  React.useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [selectedPromptForDetails]);
 
   if (!selectedPromptForDetails) return null;
 
@@ -94,22 +99,37 @@ export const PromptDetailsModal = () => {
           <div className="overflow-y-auto p-4 flex flex-col gap-6">
             {/* Image */}
             {prompt.imageUrls && prompt.imageUrls.length > 0 && (
-              <div
-                className="w-full bg-[#0f172a] rounded-lg overflow-hidden border border-[#334155] flex justify-center items-center py-2 min-h-[200px] relative group cursor-pointer"
-                onClick={() => setFullScreenImage(true)}
-              >
-                <img
-                  src={prompt.imageUrls[0]}
-                  alt={prompt.title}
-                  className="max-h-[60vh] object-contain transition-transform group-hover:scale-[1.02] select-none"
-                  crossOrigin="anonymous"
-                  draggable={!isPremiumLocked}
-                  onContextMenu={(e) => isPremiumLocked && e.preventDefault()}
-                  style={{ pointerEvents: isPremiumLocked ? "none" : "auto" }}
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Maximize2 size={32} className="text-white drop-shadow-lg" />
+              <div className="flex flex-col gap-2">
+                <div
+                  className="w-full bg-[#0f172a] rounded-lg overflow-hidden border border-[#334155] flex justify-center items-center py-2 min-h-[200px] relative group cursor-pointer"
+                  onClick={() => setFullScreenImage(true)}
+                >
+                  <img
+                    src={prompt.imageUrls[currentImageIndex]}
+                    alt={prompt.title}
+                    className="max-h-[60vh] object-contain transition-transform group-hover:scale-[1.02] select-none"
+                    crossOrigin="anonymous"
+                    draggable={!isPremiumLocked}
+                    onContextMenu={(e) => isPremiumLocked && e.preventDefault()}
+                    style={{ pointerEvents: isPremiumLocked ? "none" : "auto" }}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Maximize2 size={32} className="text-white drop-shadow-lg" />
+                  </div>
                 </div>
+                {prompt.imageUrls.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto py-2 scrollbar-hide">
+                    {prompt.imageUrls.map((url, i) => (
+                      <div 
+                        key={i} 
+                        onClick={() => setCurrentImageIndex(i)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 cursor-pointer transition-colors ${currentImageIndex === i ? 'border-[#6366f1]' : 'border-transparent hover:border-[#334155]'}`}
+                      >
+                        <img src={url} alt={`thumb ${i}`} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -211,7 +231,7 @@ export const PromptDetailsModal = () => {
             <X size={32} />
           </button>
           <img
-            src={prompt.imageUrls[0]}
+            src={prompt.imageUrls[currentImageIndex]}
             alt={prompt.title}
             className="max-w-full max-h-full object-contain cursor-zoom-out select-none"
             crossOrigin="anonymous"

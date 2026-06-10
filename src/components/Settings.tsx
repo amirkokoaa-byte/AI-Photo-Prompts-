@@ -28,6 +28,8 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
     }
   }, [user, navigate]);
 
+  const [isUploading, setIsUploading] = useState(false);
+
   useEffect(() => {
     let unsub: (() => void) | undefined;
     if (activeTab === 'users' && user?.isAdmin) {
@@ -41,32 +43,68 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
     };
   }, [activeTab, user]);
 
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const MAX_WIDTH = 1000;
+          let scaleSize = 1;
+          if (img.width > MAX_WIDTH) {
+            scaleSize = MAX_WIDTH / img.width;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scaleSize;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+               resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+            } else {
+               resolve(file);
+            }
+          }, 'image/jpeg', 0.8);
+        };
+      };
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Create FormData to send the file
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      try {
-         // Upload directly to user's imgbb API
-         const res = await fetch(`https://api.imgbb.com/1/upload?key=2a036fa2979a757bed58d7d0d4643947`, {
-           method: 'POST',
-           body: formData
-         });
-         const data = await res.json();
-         if (data.data?.url) {
-           // We just keep the direct URL provided by imgbb
-           callback(data.data.url);
-         } else {
-           alert('فشل رفع الصورة');
-         }
-      } catch (err: any) {
-         alert('حدث خطأ أثناء رفع الصورة');
-      } finally {
-         // Clear input
-         e.target.value = '';
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        let fileToUpload = file;
+        
+        // Compress if larger than 500KB
+        if (file.size > 500 * 1024) {
+          fileToUpload = await compressImage(file);
+        }
+
+        const formData = new FormData();
+        formData.append('image', fileToUpload);
+        
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=2a036fa2979a757bed58d7d0d4643947`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.data?.url) {
+          callback(data.data.url);
+        }
       }
+    } catch (err: any) {
+      alert('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -160,9 +198,9 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
              <div>
                <label className="text-sm font-medium text-[#94a3b8] flex justify-between items-center mb-1">
                  <span>صورة البانر بالأعلى (رابط)</span>
-                 <label className="cursor-pointer flex items-center gap-1 text-xs text-[#6366f1] hover:text-[#818cf8] transition-colors">
-                   <UploadCloud size={14} /> رفع من الجهاز
-                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (url) => setAppForm({...appForm, bannerImageUrl: url}))} />
+                 <label className={`cursor-pointer flex items-center gap-1 text-xs transition-colors ${isUploading ? 'text-[#fbbf24]' : 'text-[#6366f1] hover:text-[#818cf8]'}`}>
+                   <UploadCloud size={14} /> {isUploading ? 'جاري الرفع...' : 'رفع من الجهاز'}
+                   <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => handleImageUpload(e, (url) => setAppForm(prev => ({...prev, bannerImageUrl: url})))} />
                  </label>
                </label>
                <input className="w-full border p-2 rounded bg-[#0f172a] border-[#334155] text-[#f8fafc]" value={appForm.bannerImageUrl} onChange={e=>setAppForm({...appForm, bannerImageUrl: e.target.value})} />
@@ -268,11 +306,13 @@ export const Settings = ({ prompts }: { prompts: Prompt[] }) => {
                 <div>
                   <label className="text-sm font-medium mb-1 flex justify-between items-center text-[#94a3b8]">
                     <span>روابط الصور (رابط واحد في كل سطر)</span>
-                    <label className="cursor-pointer flex items-center gap-1 text-xs text-[#6366f1] hover:text-[#818cf8] transition-colors">
-                       <UploadCloud size={14} /> إضافة صورة من الجهاز
-                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, (url) => {
-                           const currentUrls = editPromptData.imageUrls || [];
-                           setEditPromptData({...editPromptData, imageUrls: [...currentUrls, url]});
+                    <label className={`cursor-pointer flex items-center gap-1 text-xs transition-colors ${isUploading ? 'text-[#fbbf24]' : 'text-[#6366f1] hover:text-[#818cf8]'}`}>
+                       <UploadCloud size={14} /> {isUploading ? 'جاري رفع الصور...' : 'إضافة صور من الجهاز'}
+                       <input type="file" multiple accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => handleImageUpload(e, (url) => {
+                           setEditPromptData(prev => {
+                               const currentUrls = prev.imageUrls || [];
+                               return {...prev, imageUrls: [...currentUrls, url]};
+                           });
                        })} />
                     </label>
                   </label>
